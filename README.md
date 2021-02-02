@@ -29,7 +29,6 @@ Then you can create instances of AWX, for example:
        name: awx
        namespace: ansible-awx
      spec:
-       deployment_type: awx
        tower_admin_user: test
        tower_admin_email: test@example.com
        tower_admin_password: changeme
@@ -47,11 +46,10 @@ After a few minutes, your new AWX instance will be accessible at `http://awx.myc
 
 ### Deploying a specific version of AWX
 
-You can pass AWX Task and Web Container images to control which version of AWX is to be deployed. To achieve this, please add following to variables under spec within your CR (Custom Resource) file:
+To achieve this, please add the following variable under spec within your CR (Custom Resource) file:
 
 ```yaml
-  tower_task_image: ansible/awx:15.0.0 # replace this with desired image
-  tower_web_image: ansible/awx:15.0.0 # replace this with desired image
+  tower_image: ansible/awx:15.0.0 # replace this with desired image
 ```
 You may also override any default variables from `roles/awx/defaults/main.yml` using the same process, i.e. by adding those variables within your CR spec.
 
@@ -176,11 +174,11 @@ Each of these must be appropriately built in preparation for a new tag:
 
 Run the following command inside this directory:
 
-    operator-sdk build ansible/awx-operator:0.5.0
+    operator-sdk build quay.io/ansible/awx-operator:$VERSION
 
 Then push the generated image to Docker Hub:
 
-    docker push ansible/awx-operator:0.5.0
+    docker push quay.io/ansible/awx-operator:$VERSION
 
 #### Build a new version of the `awx-operator.yaml` file
 

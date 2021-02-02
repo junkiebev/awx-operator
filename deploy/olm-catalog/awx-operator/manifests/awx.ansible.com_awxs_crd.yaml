@@ -2,6 +2,7 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
+  creationTimestamp: null
   name: awxs.awx.ansible.com
 spec:
   group: awx.ansible.com
@@ -13,21 +14,13 @@ spec:
   scope: Namespaced
   subresources:
     status: {}
-  version: v1beta1
-  versions:
-    - name: v1beta1
-      served: true
-      storage: true
   validation:
     openAPIV3Schema:
       description: Schema validation for the AWX CRD
-      type: object
       properties:
         spec:
-          type: object
           properties:
             external_database:
-              type: boolean
               description: |
                 If true you must supply a secret containing the location and credentials for
                 connecting to the external database by a user who has permission to create
@@ -48,3 +41,17 @@ spec:
                   username: <username to connect as>
                   password: <password to connect with>
                 type: Opaque
+              type: boolean
+          type: object
+      type: object
+  version: v1beta1
+  versions:
+    - name: v1beta1
+      served: true
+      storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

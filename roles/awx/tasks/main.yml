@@ -1,7 +1,4 @@
 ---
-- name: Include deployment type vars
-  include_vars: "{{ deployment_type }}.yml"
-
 - name: Check for existing secret key
   k8s_info:
     kind: Secret
@@ -59,8 +56,6 @@
   register: k8s_defs_result
   with_items:
     - tower_config.yaml.j2
-    - launch_awx.yaml.j2
-    - supervisor.yaml.j2
 
 - name: Apply Tower Deployment Configuration
   k8s:
@@ -113,4 +108,4 @@
   register: migrate_result
   when: (k8s_defs_result is changed) or (database_check is defined and database_check.return_code != 0)
 
-#- i_tasks: initialize.yml
+- include_tasks: initialize.yml

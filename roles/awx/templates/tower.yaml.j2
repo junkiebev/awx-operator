@@ -39,7 +39,7 @@ spec:
               readOnly: true
             - name: {{ meta.name }}-redis-socket
               mountPath: "/var/run/redis"
-        - image: '{{ tower_web_image }}'
+        - image: '{{ tower_image }}'
           name: '{{ meta.name }}-web'
 {% if tower_web_command %}
           command: {{ tower_web_command }}
@@ -66,14 +66,6 @@ spec:
               mountPath: /etc/nginx/nginx.conf
               subPath: nginx.conf
               readOnly: true
-            - name: {{ meta.name }}-launch-awx-web
-              mountPath: /usr/bin/launch_awx.sh
-              subPath: launch_awx.sh
-              readOnly: true
-            - name: {{ meta.name }}-supervisor-web-config
-              mountPath: /supervisor.conf
-              subPath: supervisor.conf
-              readOnly: true
             - name: {{ meta.name }}-redis-socket
               mountPath: "/var/run/redis"
             - name: supervisor-socket
@@ -82,18 +74,28 @@ spec:
               mountPath: "/var/run/awx-rsyslog"
             - name: rsyslog-dir
               mountPath: "/var/lib/awx/rsyslog"
+{% if development_mode | bool %}
+            - name: awx-devel
+              mountPath: "/awx_devel"
+{% endif %}
 {% if tower_web_extra_volume_mounts -%}
             {{ tower_web_extra_volume_mounts | indent(width=12, indentfirst=True) }}
 {% endif %}
-{% if tower_task_extra_env %}
+{% if (development_mode | bool) or (tower_task_extra_env | bool) %}
           env:
+{% endif %}
+{% if development_mode | bool %}
+            - name: AWX_KUBE_DEVEL
+              value: "1"
+{% endif %}
+{% if tower_task_extra_env %}
             {{ tower_web_extra_env | indent(width=12, indentfirst=True) }}
 {% endif %}
           resources:
             requests:
               memory: '{{ tower_web_mem_request }}'
               cpu: '{{ tower_web_cpu_request }}'
-        - image: '{{ tower_task_image }}'
+        - image: '{{ tower_image }}'
           name: '{{ meta.name }}-task'
           imagePullPolicy: '{{ tower_image_pull_policy }}'
 {% if tower_task_privileged == true %}
@@ -118,18 +120,6 @@ spec:
               mountPath: /etc/tower/settings.py
               subPath: settings.py
               readOnly: true
-            - name: {{ meta.name }}-launch-awx-task
-              mountPath: /usr/bin/launch_awx_task.sh
-              subPath: launch_awx_task.sh
-              readOnly: true
-            - name: {{ meta.name }}-supervisor-web-config
-              mountPath: "/supervisor.conf"
-              subPath: supervisor.conf
-              readOnly: true
-            - name: {{ meta.name }}-supervisor-task-config
-              mountPath: /supervisor_task.conf
-              subPath: supervisor_task.conf
-              readOnly: true
             - name: {{ meta.name }}-redis-socket
               mountPath: "/var/run/redis"
             - name: supervisor-socket
@@ -138,6 +128,10 @@ spec:
               mountPath: "/var/run/awx-rsyslog"
             - name: rsyslog-dir
               mountPath: "/var/lib/awx/rsyslog"
+{% if development_mode | bool %}
+            - name: awx-devel
+              mountPath: "/awx_devel"
+{% endif %}
 {% if tower_task_extra_volume_mounts -%}
             {{ tower_task_extra_volume_mounts | indent(width=12, indentfirst=True) }}
 {% endif %}
@@ -154,6 +148,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+{% if development_mode | bool %}
+            - name: AWX_KUBE_DEVEL
+              value: "1"
+{% endif %}
 {% if tower_task_extra_env -%}
             {{ tower_task_extra_env | indent(width=12, indentfirst=True) }}
 {% endif %}
@@ -194,32 +192,6 @@ spec:
             items:
               - key: redis_conf
                 path: redis.conf
-        - name: {{ meta.name }}-launch-awx-web
-          configMap:
-            name: '{{meta.name }}-launch-awx'
-            items:
-              - key: launch-awx-web
-                path: launch_awx.sh
-            defaultMode: 0755
-        - name: {{ meta.name }}-supervisor-web-config
-          configMap:
-            name: '{{ meta.name }}-supervisor-config'
-            items:
-              - key: supervisor-web-config
-                path: supervisor.conf
-        - name: {{ meta.name }}-launch-awx-task
-          configMap:
-            name: '{{ meta.name }}-launch-awx'
-            items:
-              - key: launch-awx-task
-                path: 'launch_awx_task.sh'
-            defaultMode: 0755
-        - name: {{ meta.name }}-supervisor-task-config
-          configMap:
-            name: '{{ meta.name }}-supervisor-config'
-            items:
-              - key: supervisor-task-config
-                path: 'supervisor_task.conf'
         - name: {{ meta.name }}-redis-socket
           emptyDir: {}
         - name: supervisor-socket
@@ -228,6 +200,11 @@ spec:
           emptyDir: {}
         - name: rsyslog-dir
           emptyDir: {}
+{% if development_mode | bool %}
+        - name: awx-devel
+          hostPath:
+            path: /awx_devel
+{% endif %}
 {% if tower_extra_volumes -%}
         {{ tower_extra_volumes | indent(width=8, indentfirst=True) }}
 {% endif %}

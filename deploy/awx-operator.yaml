@@ -110,19 +110,8 @@ spec:
     spec:
       serviceAccountName: awx-operator
       containers:
-        - name: ansible
-          command:
-            - /usr/local/bin/ao-logs
-            - /tmp/ansible-operator/runner
-            - stdout
-          image: "ansible/awx-operator:0.5.0"
-          imagePullPolicy: "Always"
-          volumeMounts:
-            - mountPath: /tmp/ansible-operator/runner
-              name: runner
-              readOnly: true
-        - name: operator
-          image: "ansible/awx-operator:0.5.0"
+        - name: awx-operator
+          image: "quay.io/ansible/awx-operator:0.6.0"
           imagePullPolicy: "Always"
           volumeMounts:
             - mountPath: /tmp/ansible-operator/runner
@@ -137,6 +126,14 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: awx-operator
+            - name: ANSIBLE_GATHERING
+              value: explicit
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 6789
+            initialDelaySeconds: 5
+            periodSeconds: 3
       volumes:
         - name: runner
           emptyDir: {}
@@ -169,9 +166,6 @@ spec:
         spec:
           type: object
           properties:
-            deployment_type:
-              type: string
-              pattern: "^(tower|awx)(-)?.*$"
             external_database:
               type: boolean
               description: |
@@ -194,5 +188,3 @@ spec:
                   username: <username to connect as>
                   password: <password to connect with>
                 type: Opaque
-          required:
-            - deployment_type
